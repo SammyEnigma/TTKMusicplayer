@@ -1,5 +1,5 @@
-#ifndef QHTTPCONNECTION_H
-#define QHTTPCONNECTION_H
+#ifndef OSSDATAINTERFACE_P_H
+#define OSSDATAINTERFACE_P_H
 
 /* =================================================
  * This file is part of the TTK Music Player project
@@ -19,38 +19,29 @@
  * with this program; If not, see <http://www.gnu.org/licenses/>.
  ================================================= */
 
-#include "qhttpserverfwd.h"
+#include "ossdatainterface.h"
 
-class QHttpConnectionPrivate;
-
-/*! @brief The class of the http connection.
- * @author Greedysky <greedysky@163.com>
- */
-class MUSIC_EXTRAS_EXPORT QHttpConnection : public QObject
+class OSSDataInterfacePrivate : public TTKPrivate<OSSDataInterface>
 {
-    Q_OBJECT
 public:
-    explicit QHttpConnection(QTcpSocket *socket, QObject *parent = nullptr);
-    virtual ~QHttpConnection();
+    OSSDataInterfacePrivate()
+    {
+        m_networkManager = nullptr;
+    }
 
-    void write(const QByteArray &data);
-    void flush();
-    void waitForBytesWritten();
+    void insertAuthorization(const QString &method, MStringMap &headers, const QString &resource) const
+    {
+        if(!OSSConf::ACCESS_KEY.isEmpty() && !OSSConf::SECRET_KEY.isEmpty())
+        {
+            headers.insert("Authorization", OSSUtils::createSignForNormalAuth(method, OSSConf::ACCESS_KEY, OSSConf::SECRET_KEY, headers, resource));
+        }
+        else if(!OSSConf::ACCESS_KEY.isEmpty())
+        {
+            headers.insert("Authorization", OSSConf::ACCESS_KEY);
+        }
+    }
 
-Q_SIGNALS:
-    void newRequest(QHttpRequest *, QHttpResponse *);
-    void allBytesWritten();
-
-private Q_SLOTS:
-    void parseRequest();
-    void responseDone();
-    void socketDisconnected();
-    void invalidateRequest();
-    void updateWriteCount(qint64);
-
-private:
-    TTK_DECLARE_PRIVATE(QHttpConnection)
-
+    QNetworkAccessManager *m_networkManager;
 };
 
-#endif
+#endif // OSSDATAINTERFACE_P_H
